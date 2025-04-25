@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QLabel,
     QFileDialog, QProgressBar, QLineEdit, QMessageBox
 )
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QImage, QPixmap
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
 
@@ -76,7 +76,7 @@ class LavaApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Lava Flow Analyzer")
-        self.setGeometry(100, 100, 500, 300)
+        self.setGeometry(100, 100, 500, 400)
         self.setStyleSheet("background-color: #F2F1F0;")
 
         font = QFont("Arial", 10)
@@ -105,6 +105,9 @@ class LavaApp(QWidget):
         self.results = QLabel("")
         layout.addWidget(self.results)
 
+        self.image_label = QLabel()
+        layout.addWidget(self.image_label)
+
         self.export_btn = QPushButton("Export Results as CSV")
         self.export_btn.setEnabled(False)
         self.export_btn.clicked.connect(self.export_results)
@@ -125,7 +128,11 @@ class LavaApp(QWidget):
         self.processor.start()
 
     def show_results(self, mask, width, speed):
-        cv2.imshow("Lava Mask", mask)
+        height, width_mask = mask.shape
+        q_img = QImage(mask.data, width_mask, height, width_mask, QImage.Format_Grayscale8)
+        pixmap = QPixmap.fromImage(q_img).scaled(400, 300, Qt.KeepAspectRatio)
+        self.image_label.setPixmap(pixmap)
+
         self.results.setText(f"Flow Width: {width:.2f} m\nAverage Speed: {speed:.2f} m/s")
         self.export_data = {
             "width": width,
