@@ -2,6 +2,8 @@ import sys
 import cv2
 import numpy as np
 import os
+import csv
+from datetime import datetime
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QLabel,
     QFileDialog, QProgressBar, QLineEdit, QMessageBox
@@ -103,6 +105,11 @@ class LavaApp(QWidget):
         self.results = QLabel("")
         layout.addWidget(self.results)
 
+        self.export_btn = QPushButton("Export Results as CSV")
+        self.export_btn.setEnabled(False)
+        self.export_btn.clicked.connect(self.export_results)
+        layout.addWidget(self.export_btn)
+
         self.setLayout(layout)
 
     def open_file(self):
@@ -120,6 +127,23 @@ class LavaApp(QWidget):
     def show_results(self, mask, width, speed):
         cv2.imshow("Lava Mask", mask)
         self.results.setText(f"Flow Width: {width:.2f} m\nAverage Speed: {speed:.2f} m/s")
+        self.export_data = {
+            "width": width,
+            "speed": speed,
+            "agl": self.abg_input.text(),
+            "fov": self.fov_input.text(),
+            "timestamp": datetime.now().isoformat()
+        }
+        self.export_btn.setEnabled(True)
+
+    def export_results(self):
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV", "lava_results.csv", "CSV files (*.csv)")
+        if file_path:
+            with open(file_path, mode='w', newline='') as file:
+                writer = csv.DictWriter(file, fieldnames=self.export_data.keys())
+                writer.writeheader()
+                writer.writerow(self.export_data)
+            QMessageBox.information(self, "Success", "Results exported successfully.")
 
     def show_error(self, message):
         QMessageBox.critical(self, "Error", message)
